@@ -12,7 +12,7 @@ use axum::{
 };
 use dotenv::dotenv;
 use handlers::{
-    label::{all_label, create_label, delete_label, find_label, update_label},
+    label::{all_label, create_label, delete_label, find_by_user, find_label, update_label},
     todo::{all_todo, create_todo, delete_todo, find_todo, update_todo},
 };
 use hyper::header::CONTENT_TYPE;
@@ -83,6 +83,7 @@ fn create_app<Todo: TodoRepository, Label: LabelRepository>(
             "/labels/:id",
             get(find_label::<Label>).patch(update_label::<Label>),
         )
+        .route("/labels/user/:user_id", get(find_by_user::<Label>))
         .layer(Extension(Arc::new(todo_repository)))
         .layer(Extension(Arc::new(label_repository)))
         .layer(

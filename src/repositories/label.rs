@@ -8,6 +8,7 @@ use validator::Validate;
 pub trait LabelRepository: Clone + std::marker::Send + std::marker::Sync + 'static {
     async fn create(&self, payload: CreateLabel) -> anyhow::Result<Label>;
     async fn find(&self, id: i32) -> anyhow::Result<Label>;
+    async fn find_by_user(&self, id: i32) -> anyhow::Result<Vec<Label>>;
     async fn all(&self) -> anyhow::Result<Vec<Label>>;
     async fn update(&self, id: i32, payload: UpdateLabel) -> anyhow::Result<Label>;
     async fn delete(&self, id: i32) -> anyhow::Result<()>;
@@ -78,10 +79,8 @@ impl LabelRepository for LabelRepositoryForDb {
     }
 
     async fn update(&self, id: i32, payload: UpdateLabel) -> anyhow::Result<Label> {
-        let tx = self.pool.begin().await?;
-
         let old_label = self.find(id).await?;
-        sqlx::query_as::<_, Label>(
+        let updated_one = sqlx::query_as::<_, Label>(
             r#"
             UPDATE labels SET name=$1
             WHERE id=$2
@@ -93,14 +92,11 @@ impl LabelRepository for LabelRepositoryForDb {
         .fetch_one(&self.pool)
         .await?;
 
-        tx.commit().await?;
-        let label = self.find(id).await?;
-
-        Ok(label)
+        Ok(updated_one)
     }
 
     async fn find(&self, id: i32) -> anyhow::Result<Label> {
-        let items = sqlx::query_as::<_, Label>(
+        let label = sqlx::query_as::<_, Label>(
             r#"
                 SELECT labels.*
                 FROM labels
@@ -108,16 +104,33 @@ impl LabelRepository for LabelRepositoryForDb {
                 "#,
         )
         .bind(id)
-        .fetch_all(&self.pool)
+        .fetch_one(&self.pool)
         .await
         .map_err(|e| match e {
             sqlx::Error::RowNotFound => RepositoryError::NotFound(id),
             _ => RepositoryError::Unexpected(e.to_string()),
         })?;
 
-        // let labels = fold_entities(items);
-        let label = items.first().ok_or(RepositoryError::NotFound(id))?;
         Ok(label.clone())
+    }
+
+    async fn find_by_user(&self, user_id: i32) -> anyhow::Result<Vec<Label>> {
+        let labels = sqlx::query_as::<_, Label>(
+            r#"
+                SELECT labels.*
+                FROM labels
+                WHERE labels.user_id=$1
+                "#,
+        )
+        .bind(user_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => RepositoryError::NotFound(user_id),
+            _ => RepositoryError::Unexpected(e.to_string()),
+        })?;
+
+        Ok(labels)
     }
 
     async fn all(&self) -> anyhow::Result<Vec<Label>> {
@@ -258,6 +271,12 @@ pub mod test_utils {
             let store = self.read_store_ref();
             let label = store.get(&id).ok_or(RepositoryError::NotFound(id))?;
             Ok(label.clone())
+        }
+
+        async fn find_by_user(&self, id: i32) -> anyhow::Result<Vec<Label>> {
+            let store = self.read_store_ref();
+            let labels = Vec::from_iter(store.get(&id).map(|label| label.clone()));
+            Ok(labels)
         }
         
         async fn all(&self) -> anyhow::Result<Vec<Label>> {

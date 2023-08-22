@@ -32,6 +32,14 @@ pub async fn find_label<T: LabelRepository>(
     Ok((StatusCode::OK, Json(label)))
 }
 
+pub async fn find_by_user<T: LabelRepository>(
+    Path(user_id): Path<i32>,
+    Extension(repo): Extension<Arc<T>>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let labels = repo.find_by_user(user_id).await.or(Err(StatusCode::NOT_FOUND))?;
+    Ok((StatusCode::OK, Json(labels)))
+}
+
 pub async fn all_label<T: LabelRepository>(
     Extension(repo): Extension<Arc<T>>,
 ) -> Result<impl IntoResponse, StatusCode> {
