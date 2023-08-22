@@ -1,1 +1,51 @@
-@baseurl=http://localhost:3001
+@baseurl=http://localhost:3000
+
+############ Labels ############
+### POST
+POST {{baseurl}}/labels HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1,
+    "name": "work"
+}
+
+### DELETE
+DELETE  {{baseurl}}/labels/2 HTTP/1.1
+Content-Type: application/json
+
+### GET
+GET {{baseurl}}/labels HTTP/1.1
+Content-Type: application/json
+
+############ Todos ############
+### POST
+POST {{baseurl}}/todos HTTP/1.1
+Content-Type: application/json
+
+{
+    "text": "First test todo",
+    "labels": [3]
+}
+
+### PATCH
+PATCH {{baseurl}}/todos/2 HTTP/1.1
+Content-Type: application/json
+
+{
+    "text": "First test todo updated",
+    "completed": true,
+    "labels": [3]
+}
+
+### DELETE
+DELETE {{baseurl}}/todos/1 HTTP/1.1
+Content-Type: application/json
+
+### GET
+GET {{baseurl}}/todos HTTP/1.1
+Content-Type: application/json
+
+### GET
+GET {{baseurl}}/todos/2 HTTP/1.1
+Content-Type: application/json

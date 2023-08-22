@@ -24,20 +24,25 @@ use dotenv::dotenv;
 
 #[tokio::main]
 async fn main() {
-    let APP_ENV = env::var("APP_ENV").unwrap_or("local".to_string());
-    dotenv::from_filename(".config/.env.".to_string() + APP_ENV.as_str()).ok();
+    // read .env file
+    let app_env = env::var("APP_ENV").unwrap_or("local".to_string());
+    dotenv::from_filename(".config/.env.".to_string() + app_env.as_str()).ok();
 
+    // set log level
     let log_level = env::var("RUST_LOG").unwrap_or("info".to_string());
     env::set_var("RUST_LOG", log_level);
     tracing_subscriber::fmt::init();
     dotenv().ok();
 
+    // set database
     // let repo = TodoRepositoryForMemory::new();
     let database_url = env::var("DATABASE_URL").expect("undefined [DATABASE_URL]");
     tracing::debug!("startconnect database...");
     let pool = PgPool::connect(database_url.as_str())
         .await
         .expect(&format!("cannot connect to database: [{}]", database_url));
+
+    // build app
     let app = create_app(
         TodoRepositoryForDb::new(pool.clone()),
         LabelRepositoryForDb::new(pool.clone()),
@@ -46,17 +51,19 @@ async fn main() {
 
     tracing::debug!("listening on {}", addr);
 
+    // serve
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
 }
 
+// create app with repositories. return Router
 fn  create_app<Todo: TodoRepository, Label: LabelRepository>(
     todo_repository: Todo,
     label_repository: Label,
 ) -> Router {
-    let APP_URL: std::string::String = env::var("APP_URL").expect("APP_URL must be set");
+    let allow_origin_url: std::string::String = env::var("ALLOW_ORIGIN_URL").expect("ALLOW_ORIGIN_URL must be set");
 
     Router::new()
         .route("/", get(root))
@@ -76,7 +83,7 @@ fn  create_app<Todo: TodoRepository, Label: LabelRepository>(
         .layer(Extension(Arc::new(label_repository)))
         .layer(
             CorsLayer::new()
-                .allow_origin(AllowOrigin::exact(APP_URL.parse().unwrap()))
+                .allow_origin(AllowOrigin::exact(allow_origin_url.parse().unwrap()))
                 .allow_methods(Any)
                 .allow_headers(vec![CONTENT_TYPE])
         )
@@ -90,7 +97,7 @@ async fn root() -> &'static str {
 mod test {
     use super::*;
     use crate::repositories::todo::{test_utils::TodoRepositoryForMemory, CreateTodo, TodoEntity};
-    use crate::repositories::label::{test_utils::LabelRepositoryForMemory};
+    use crate::repositories::label::test_utils::LabelRepositoryForMemory;
     use axum::response::Response;
     use axum::{
         body::Body,

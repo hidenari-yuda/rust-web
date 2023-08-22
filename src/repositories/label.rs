@@ -169,9 +169,9 @@ pub mod test_utils {
 
     #[cfg(test)]
     impl CreateLabel {
-        pub fn new(name: String) -> Self {
-            Self { name: name }
-        }
+        // pub fn new(name: String) -> Self {
+        //     Self { name: name }
+        // }
     }
 
     type LabelDatas = HashMap<i32, Label>;
