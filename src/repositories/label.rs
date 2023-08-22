@@ -31,7 +31,7 @@ pub struct CreateLabel {
 pub struct UpdateLabel {
     #[validate(length(min = 1, message = "Can not be empty"))]
     #[validate(length(max = 100, message = "Over name length"))]
-    name: Option<String>
+    name: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -273,12 +273,16 @@ pub mod test_utils {
             Ok(label.clone())
         }
 
-        async fn find_by_user(&self, id: i32) -> anyhow::Result<Vec<Label>> {
-            let store = self.read_store_ref();
-            let labels = Vec::from_iter(store.get(&id).map(|label| label.clone()));
+        async fn find_by_user(&self, _user_id: i32) -> anyhow::Result<Vec<Label>> {
+            let labels: Vec<Label> = self
+                .read_store_ref()
+                .values()
+                // .filter(|label| label.user_id == user_id)
+                .cloned()
+                .collect();
             Ok(labels)
         }
-        
+
         async fn all(&self) -> anyhow::Result<Vec<Label>> {
             let store = self.read_store_ref();
             let labels = Vec::from_iter(store.values().map(|label| label.clone()));
