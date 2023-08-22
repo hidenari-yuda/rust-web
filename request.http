@@ -10,12 +10,24 @@ Content-Type: application/json
     "name": "work"
 }
 
+### PATCH
+PATCH {{baseurl}}/labels/1 HTTP/1.1
+Content-Type: application/json
+
+{
+    "name": "work updated"
+}
+
 ### DELETE
 DELETE  {{baseurl}}/labels/2 HTTP/1.1
 Content-Type: application/json
 
 ### GET
 GET {{baseurl}}/labels HTTP/1.1
+Content-Type: application/json
+
+### GET
+GET {{baseurl}}/labels/1 HTTP/1.1
 Content-Type: application/json
 
 ############ Todos ############

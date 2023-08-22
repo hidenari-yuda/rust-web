@@ -8,6 +8,7 @@ use std::sync::Arc;
 use crate::repositories::label::{
     LabelRepository,
     CreateLabel,
+    UpdateLabel,
 };
 use super::ValidatedJson;
 
@@ -15,40 +16,40 @@ pub async fn create_label<T: LabelRepository>(
     ValidatedJson(payload): ValidatedJson<CreateLabel>,
     Extension(repo): Extension<Arc<T>>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let todo = repo
+    let label = repo
         .create(payload)
         .await
         .or(Err(StatusCode::NOT_FOUND))?;
 
-    Ok((StatusCode::CREATED, Json(todo)))
+    Ok((StatusCode::CREATED, Json(label)))
 }
 
-// pub async fn find_todo<T: LabelRepository>(
-//     Path(id): Path<i32>,
-//     Extension(repo): Extension<Arc<T>>,
-// ) -> Result<impl IntoResponse, StatusCode> {
-//     let todo = repo.find(id).await.or(Err(StatusCode::NOT_FOUND))?;
-//     Ok((StatusCode::OK, Json(todo)))
-// }
+pub async fn find_label<T: LabelRepository>(
+    Path(id): Path<i32>,
+    Extension(repo): Extension<Arc<T>>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let label = repo.find(id).await.or(Err(StatusCode::NOT_FOUND))?;
+    Ok((StatusCode::OK, Json(label)))
+}
 
 pub async fn all_label<T: LabelRepository>(
     Extension(repo): Extension<Arc<T>>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let todos = repo.all().await.unwrap();
-    Ok((StatusCode::OK, Json(todos)))
+    let labels = repo.all().await.unwrap();
+    Ok((StatusCode::OK, Json(labels)))
 }
 
-// pub async fn update_todo<T: TodoRepository>(
-//     Path(id): Path<i32>,
-//     ValidatedJson(payload): ValidatedJson<UpdateTodo>,
-//     Extension(repo): Extension<Arc<T>>,
-// ) -> Result<impl IntoResponse, StatusCode> {
-//     let todo = repo
-//         .update(id, payload)
-//         .await
-//         .or(Err(StatusCode::NOT_FOUND))?;
-//     Ok((StatusCode::CREATED, Json(todo)))
-// }
+pub async fn update_label<T: LabelRepository>(
+    Path(id): Path<i32>,
+    ValidatedJson(payload): ValidatedJson<UpdateLabel>,
+    Extension(repo): Extension<Arc<T>>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let label = repo
+        .update(id, payload)
+        .await
+        .or(Err(StatusCode::NOT_FOUND))?;
+    Ok((StatusCode::CREATED, Json(label)))
+}
 
 pub async fn delete_label<T: LabelRepository>(
     Path(id): Path<i32>,
